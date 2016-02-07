@@ -1,0 +1,15 @@
+[package]
+name = "binutils"
+version = "0.1.0"
+authors = ["Ticki <Ticki@users.noreply.github.com>"]
+
+[[bin]]
+name = "strings"
+path = "src/strings/main.rs"
+
+[[bin]]
+name = "disasm"
+path = "src/disasm/main.rs"
+
+[dependencies]
+
