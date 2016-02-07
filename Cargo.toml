@@ -5,7 +5,7 @@ authors = ["Ticki <Ticki@users.noreply.github.com>"]
 
 [[bin]]
 name = "strings"
-path = "src/strings/main.rs"
+path = "src/bin/strings.rs"
 
 [[bin]]
 name = "disasm"
