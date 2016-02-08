@@ -10,7 +10,7 @@ use std::process::exit;
 use std::io::{Write, Read};
 
 use binutils::extra::OptionalExt;
-use binutils::convert::{to_hex, from_hex, ascii_to_hex, hex_to_ascii};
+use binutils::convert::{u8_to_hex, hex_to_u8, ascii_u8_to_hex, hex_to_ascii};
 
 const HELP: &'static [u8] = br#"
     NAME
@@ -42,7 +42,7 @@ const HELP: &'static [u8] = br#"
 
 fn encode<R: Read, W: Write>(stdin: R, mut stdout: W) {
     for i in stdin.bytes() {
-        let (a, b) = to_hex(i.try());
+        let (a, b) = u8_to_hex(i.try());
         stdout.write(&[hex_to_ascii(a), hex_to_ascii(b)]).try();
     }
 }
@@ -61,7 +61,7 @@ fn decode<R: Read, W: Write>(stdin: R, mut stdout: W) {
             break
         };
 
-        stdout.write(&[from_hex((ascii_to_hex(i), ascii_to_hex(j)))]).try();
+        stdout.write(&[hex_to_u8((ascii_u8_to_hex(i), ascii_u8_to_hex(j)))]).try();
     }
 }
 
