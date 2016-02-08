@@ -8,8 +8,16 @@
 #![deny(missing_docs)]
 #![deny(unused_mut)]
 
+#![feature(core_intrinsics)]
+
 /// Scan a byte stream for printable strings of 4 or more bytes.
 pub mod strings;
+
+/// Primitives for processing bits.
+pub mod bits;
+
+/// Converting between bases and endianesses
+pub mod convert;
 
 /// Extra helper functionality
 pub mod extra;

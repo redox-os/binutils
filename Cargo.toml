@@ -8,6 +8,10 @@ name = "strings"
 path = "src/bin/strings.rs"
 
 [[bin]]
+name = "hex"
+path = "src/bin/hex.rs"
+
+[[bin]]
 name = "disasm"
 path = "src/disasm/main.rs"
 

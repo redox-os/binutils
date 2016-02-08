@@ -8,6 +8,9 @@ pub trait OptionalExt {
 
     /// Unwrap or abort program with exit code
     fn try(self) -> Self::Succ;
+
+    /// An unwrapping where the fail-case is not checked and threaten as statical unreachable.
+    unsafe fn unchecked_unwrap(self) -> Self::Succ;
 }
 
 impl<T, U: Error> OptionalExt for Result<T, U> {
@@ -22,4 +25,29 @@ impl<T, U: Error> OptionalExt for Result<T, U> {
             },
         }
     }
+
+    unsafe fn unchecked_unwrap(self) -> T {
+        if let Ok(x) = self {
+            x
+        } else {
+            unreachable()
+        }
+    }
+}
+
+/// A hint which is threaten as statical unreachable in release mode, and panic (unreachable!())
+/// in debug mode.
+#[cfg(debug)]
+pub unsafe fn unreachable() -> ! {
+    unreachable!();
+}
+
+
+/// A hint which is threaten as statical unreachable in release mode, and panic (unreachable!())
+/// in debug mode.
+#[cfg(not(debug))]
+pub unsafe fn unreachable() -> ! {
+    use std::intrinsics::unreachable;
+
+    unreachable();
 }
