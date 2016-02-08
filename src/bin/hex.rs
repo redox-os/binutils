@@ -10,11 +10,11 @@ use std::process::exit;
 use std::io::{Write, Read};
 
 use binutils::extra::OptionalExt;
-use binutils::convert::{to_hex, from_hex};
+use binutils::convert::{to_hex, from_hex, ascii_to_hex, hex_to_ascii};
 
 const HELP: &'static [u8] = br#"
     NAME
-        hex - read a binary file and output it in hexadecimal representation
+        hex - read a binary file and output it in hexadecimal representation.
     SYNOPSIS
         hex [-h | --help] [-d | --decode] [FILE]
     DESCRIPTION
@@ -28,6 +28,8 @@ const HELP: &'static [u8] = br#"
         -d
         --decode
             Decode hexadecimal.
+    AUTHOR
+        This program was written by Ticki. Bugs should be reported in the Github repository, 'redox-os/binutils'.
     COPYRIGHT
         Copyright (c) 2016 Ticki
 
@@ -38,24 +40,10 @@ const HELP: &'static [u8] = br#"
         THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 "#;
 
-fn to_ascii(b: u8) -> u8 {
-    match b {
-        0...9 => b'0' + b,
-        _ => b'a' - 10 + b,
-    }
-}
-
-fn from_ascii(b: u8) -> u8 {
-    match b {
-        b'0'...b'9' => b - b'0',
-        _ => b - b'a' + 10,
-    }
-}
-
 fn encode<R: Read, W: Write>(stdin: R, mut stdout: W) {
     for i in stdin.bytes() {
         let (a, b) = to_hex(i.try());
-        stdout.write(&[to_ascii(a), to_ascii(b)]).try();
+        stdout.write(&[hex_to_ascii(a), hex_to_ascii(b)]).try();
     }
 }
 
@@ -73,7 +61,7 @@ fn decode<R: Read, W: Write>(stdin: R, mut stdout: W) {
             break
         };
 
-        stdout.write(&[from_hex((from_ascii(i), from_ascii(j)))]).try();
+        stdout.write(&[from_hex((ascii_to_hex(i), ascii_to_hex(j)))]).try();
     }
 }
 

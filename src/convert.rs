@@ -17,6 +17,44 @@ fn test_from_hex() {
     }
 }
 
+/// Convert hex to ascii
+#[inline]
+pub fn hex_to_ascii(b: u8) -> u8 {
+    match b {
+        0...9 => b'0' + b,
+        _ => b'a' - 10 + b,
+    }
+}
+
+#[test]
+fn test_hex2ascii() {
+    assert_eq!(hex_to_ascii(0x0), b'0');
+    assert_eq!(hex_to_ascii(0x1), b'1');
+    assert_eq!(hex_to_ascii(0x2), b'2');
+    assert_eq!(hex_to_ascii(0x3), b'3');
+    assert_eq!(hex_to_ascii(0x4), b'4');
+
+    assert_eq!(hex_to_ascii(0xa), b'a');
+    assert_eq!(hex_to_ascii(0xb), b'b');
+    assert_eq!(hex_to_ascii(0xc), b'c');
+}
+
+/// Convert ascii to hex
+#[inline]
+pub fn ascii_to_hex(b: u8) -> u8 {
+    match b {
+        b'0'...b'9' => b - b'0',
+        _ => b - b'a' + 10,
+    }
+}
+
+#[test]
+fn ascii2hex() {
+    for i in 0..16 {
+        assert_eq!(ascii_to_hex(hex_to_ascii(i)), i);
+    }
+}
+
 /// Convert a base 256 (byte) to an octal representation
 #[inline]
 pub fn to_oct(from: u8) -> (u8, u8, u8) {

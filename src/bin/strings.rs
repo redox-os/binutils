@@ -27,6 +27,8 @@ const HELP: &'static [u8] = br#"
         -h
         --help
             Print this manual page.
+    AUTHOR
+        This program was written by Ticki. Bugs should be reported in the Github repository, 'redox-os/binutils'.
     COPYRIGHT
         Copyright (c) 2016 Ticki
 
