@@ -4,6 +4,19 @@ pub fn to_hex(from: u8) -> (u8, u8) {
     (from >> 4, from & 0b1111)
 }
 
+/// Convert two hexadecimal digits to a byte
+#[inline]
+pub fn from_hex((a, b): (u8, u8)) -> u8 {
+    (a << 4) + b
+}
+
+#[test]
+fn test_from_hex() {
+    for i in 0..255 {
+        assert_eq!(from_hex(to_hex(i)), i);
+    }
+}
+
 /// Convert a base 256 (byte) to an octal representation
 #[inline]
 pub fn to_oct(from: u8) -> (u8, u8, u8) {
@@ -12,6 +25,10 @@ pub fn to_oct(from: u8) -> (u8, u8, u8) {
 
 #[test]
 fn test_hex() {
+    for i in 0..16 {
+        assert_eq!(to_hex(i), (0, i));
+    }
+
     assert_eq!(to_hex(0xDE), (0xD, 0xE));
     assert_eq!(to_hex(0xAD), (0xA, 0xD));
     assert_eq!(to_hex(0xBE), (0xB, 0xE));

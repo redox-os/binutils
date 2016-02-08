@@ -10,7 +10,7 @@ use std::process::exit;
 use std::io::{Write, Read};
 
 use binutils::extra::OptionalExt;
-use binutils::convert::to_hex;
+use binutils::convert::{to_hex, from_hex};
 
 const HELP: &'static [u8] = br#"
     NAME
@@ -59,6 +59,24 @@ fn encode<R: Read, W: Write>(stdin: R, mut stdout: W) {
     }
 }
 
+fn decode<R: Read, W: Write>(stdin: R, mut stdout: W) {
+    let mut iter = stdin.bytes().map(|x| x.try());
+    loop {
+        let i = if let Some(x) = iter.next() {
+            x
+        } else {
+            break
+        };
+        let j = if let Some(x) = iter.next() {
+            x
+        } else {
+            break
+        };
+
+        stdout.write(&[from_hex((from_ascii(i), from_ascii(j)))]).try();
+    }
+}
+
 fn main() {
     let mut stdout = io::stdout();
     let mut args = env::args();
@@ -69,9 +87,15 @@ fn main() {
 
     match args.nth(1) {
         None => encode(io::stdin(), stdout),
-        Some(a) => match a.as_ref() {
+        Some(a) => match a.as_ref() { // MIR plz
             "-h" | "--help" => {
                 stdout.write(HELP).try();
+            },
+            "-d" | "--decode" => {
+                match args.next() {
+                    Some(f) => decode(fs::File::open(f).try(), stdout),
+                    None => decode(io::stdin(), stdout),
+                }
             },
             f => encode(fs::File::open(f).try(), stdout),
         },
