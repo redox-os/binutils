@@ -51,3 +51,21 @@ pub unsafe fn unreachable() -> ! {
 
     unreachable();
 }
+
+#[macro_export]
+macro_rules! try_some {
+    ($x:expr) => {
+        if let Some(x) = $x {
+            x
+        } else {
+            return None;
+        }
+    };
+    ($x:expr => $y:expr) => {
+        if let Some(x) = $x {
+            x
+        } else {
+            return $y;
+        }
+    };
+}

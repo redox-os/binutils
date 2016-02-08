@@ -34,7 +34,7 @@ pub fn hex_to_ascii(b: u8) -> u8 {
 
 /// Convert ascii to hex
 #[inline]
-pub fn ascii_u8_to_hex(b: u8) -> u8 {
+pub fn ascii_to_hex(b: u8) -> u8 {
     match b {
         b'0'...b'9' => b - b'0',
         _ => b - b'a' + 10,
@@ -74,7 +74,7 @@ mod tests {
     #[test]
     fn ascii2hex() {
         for i in 0..16 {
-            assert_eq!(ascii_u8_to_hex(hex_to_ascii(i)), i);
+            assert_eq!(ascii_to_hex(hex_to_ascii(i)), i);
         }
     }
 

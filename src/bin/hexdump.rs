@@ -1,5 +1,6 @@
 #![deny(warnings)]
 
+#[macro_use]
 extern crate binutils;
 
 use std::env;
@@ -10,7 +11,7 @@ use std::io::{Write, Read};
 use std::mem;
 
 use binutils::extra::OptionalExt;
-use binutils::convert::{u8_to_hex, u32_byte_array, hex_to_ascii};
+use binutils::convert::{u8_to_hex, hex_to_u8, u32_byte_array, hex_to_ascii, ascii_to_hex};
 use binutils::strings::IsPrintable;
 
 const HELP: &'static [u8] = br#"
@@ -97,14 +98,34 @@ fn encode<R: Read, W: Write>(mut stdin: R, mut stdout: W) {
         for _ in 0..41 - rem * 5 {
             stdout.write(b" ").try();
         }
-        stdout.write(&ascii).try();
+        stdout.write(&ascii[..rem * 2]).try();
         stdout.write(b"\n").try();
     }
 
 }
 
-fn decode<R: Read, W: Write>(_stdin: R, _stdout: W) {
-    unimplemented!();
+fn decode<R: Read, W: Write>(stdin: R, mut stdout: W) {
+    let mut stdin = stdin.bytes().map(|x| x.try()).filter(|&x| x != b' ');
+
+    loop {
+        stdin.nth(8); // Skip the first column
+        for _ in 0..16 { // Process the inner 8 columns
+            stdout.write(&[hex_to_u8((
+                ascii_to_hex(
+                    try_some!(stdin.next() => ())
+                ),
+                ascii_to_hex(
+                    try_some!(stdin.next() => ())
+                )
+            ))]).try();
+        }
+
+        loop {
+            if try_some!(stdin.next() => ()) == b'\n' {
+                break
+            }
+        }
+    }
 }
 
 fn main() {
@@ -123,8 +144,8 @@ fn main() {
             },
             "-r" | "--reverse" => {
                 match args.next() {
-                    Some(f) => decode(fs::File::open(f).try(), stdout),
                     None => decode(io::stdin(), stdout),
+                    Some(f) => decode(fs::File::open(f).try(), stdout),
                 }
             },
             f => encode(fs::File::open(f).try(), stdout),

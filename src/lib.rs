@@ -19,5 +19,6 @@ pub mod bits;
 pub mod convert;
 
 /// Extra helper functionality
+#[macro_use]
 pub mod extra;
 
