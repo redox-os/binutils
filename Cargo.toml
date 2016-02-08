@@ -12,6 +12,10 @@ name = "hex"
 path = "src/bin/hex.rs"
 
 [[bin]]
+name = "hexdump"
+path = "src/bin/hexdump.rs"
+
+[[bin]]
 name = "disasm"
 path = "src/disasm/main.rs"
 

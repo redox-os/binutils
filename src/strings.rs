@@ -71,9 +71,27 @@ pub fn read<R: Read, W: Write>(stdin: R, mut stdout: W) {
             }
         } else {
             if trailing.is_complete() {
-                stdout.write(&[b'\n']).try();
+                stdout.write(b"\n").try();
             }
             trailing.reset();
         }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn printable() {
+        assert!(!b'\0'.is_printable());
+        assert!(!b'\t'.is_printable());
+        assert!(!b'\n'.is_printable());
+        assert!(!b'\r'.is_printable());
+        assert!(!b'\x1b'.is_printable());
+        assert!(b'a'.is_printable());
+        assert!(b'B'.is_printable());
+        assert!(b'x'.is_printable());
+        assert!(b'~'.is_printable());
     }
 }

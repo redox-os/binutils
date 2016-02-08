@@ -1,5 +1,4 @@
-#[deny(warnings)]
-#[deny(unused_mut)]
+#![deny(warnings)]
 
 extern crate binutils;
 

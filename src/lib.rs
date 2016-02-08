@@ -6,7 +6,6 @@
 
 #![deny(warnings)]
 #![deny(missing_docs)]
-#![deny(unused_mut)]
 
 #![feature(core_intrinsics)]
 
