@@ -1,5 +1,6 @@
-use std::process::exit;
 use std::error::Error;
+use std::io::{stdout, Write};
+use std::process::exit;
 
 /// Extension for Option-like types
 pub trait OptionalExt {
@@ -20,7 +21,10 @@ impl<T, U: Error> OptionalExt for Result<T, U> {
         match self {
             Ok(succ) => succ,
             Err(e) => {
-                println!("error: {}", e.description());
+                let mut stdout = stdout();
+                let _ = stdout.write(b"error: ");
+                let _ = stdout.write(e.description().as_bytes());
+                let _ = stdout.flush();
                 exit(1);
             },
         }
@@ -68,4 +72,15 @@ macro_rules! try_some {
             return $y;
         }
     };
+}
+
+/// Fail with a string literal displayed as error message.
+pub fn fail<'a>(s: &'a str) -> ! {
+    use std::io::{Write, stdout};
+
+    let mut stdout = stdout();
+    stdout.write(b"error: ").try();
+    stdout.write(s.as_bytes()).try();
+    stdout.flush().try();
+    exit(1);
 }
