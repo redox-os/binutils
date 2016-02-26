@@ -5,10 +5,9 @@ extern crate binutils;
 use std::env;
 use std::fs;
 use std::io;
-use std::process::exit;
 use std::io::{Write, Read};
 
-use binutils::extra::OptionalExt;
+use binutils::extra::{OptionalExt, fail};
 use binutils::convert::{u8_to_hex, hex_to_u8, ascii_to_hex, hex_to_ascii};
 
 const HELP: &'static [u8] = br#"
@@ -68,8 +67,7 @@ fn main() {
     let mut stdout = io::stdout();
     let mut args = env::args();
     if args.len() > 2 {
-        println!("error: Too many arguments. Try 'hex -h'.");
-        exit(1);
+        fail("error: Too many arguments. Try 'hex -h'.");
     }
 
     match args.nth(1) {

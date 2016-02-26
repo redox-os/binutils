@@ -6,10 +6,9 @@ use std::env;
 use std::fs;
 use std::io;
 use std::io::Write;
-use std::process::exit;
 
 use binutils::strings::read;
-use binutils::extra::OptionalExt;
+use binutils::extra::{OptionalExt, fail};
 
 const HELP: &'static [u8] = br#"
     NAME
@@ -42,8 +41,7 @@ fn main() {
     let mut stdout = io::stdout();
     let mut args = env::args();
     if args.len() > 2 {
-        println!("error: Too many arguments. Try 'strings -h'.");
-        exit(1);
+        fail("error: Too many arguments. Try 'strings -h'.");
     }
 
     match args.nth(1) {

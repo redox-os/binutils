@@ -6,11 +6,10 @@ extern crate binutils;
 use std::env;
 use std::fs;
 use std::io;
-use std::process::exit;
 use std::io::{Write, Read};
 use std::mem;
 
-use binutils::extra::OptionalExt;
+use binutils::extra::{OptionalExt, fail};
 use binutils::convert::{u8_to_hex, hex_to_u8, u32_byte_array, hex_to_ascii, ascii_to_hex};
 use binutils::strings::IsPrintable;
 
@@ -132,8 +131,7 @@ fn main() {
     let mut stdout = io::stdout();
     let mut args = env::args();
     if args.len() > 2 {
-        println!("error: Too many arguments. Try 'hexdump -h'.");
-        exit(1);
+        fail("error: Too many arguments. Try 'hexdump -h'.");
     }
 
     match args.nth(1) {
