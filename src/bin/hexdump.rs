@@ -1,6 +1,5 @@
 #![deny(warnings)]
 
-#[macro_use]
 extern crate binutils;
 
 use std::env;
@@ -9,7 +8,7 @@ use std::io;
 use std::io::{Write, Read};
 use std::mem;
 
-use binutils::extra::{OptionalExt, fail};
+use binutils::extra::{OptionalExt, fail, println, print};
 use binutils::convert::{u8_to_hex, hex_to_u8, u32_byte_array, hex_to_ascii, ascii_to_hex};
 use binutils::strings::IsPrintable;
 
@@ -43,13 +42,13 @@ const HELP: &'static [u8] = br#"
 
 fn encode_byte<R: Read, W: Write>(stdin: &mut R, mut stdout: &mut W) -> Option<u8> {
     let byte = if let Some(x) = stdin.bytes().next() {
-        x.try()
+        x.try(&mut stdout)
     } else {
         return None;
     };
 
     let hex = u8_to_hex(byte);
-    stdout.write(&[hex_to_ascii(hex.0), hex_to_ascii(hex.1)]).try();
+    print(&[hex_to_ascii(hex.0), hex_to_ascii(hex.1)], &mut stdout);
 
     Some(if byte.is_printable() {
         byte
@@ -66,9 +65,9 @@ fn encode<R: Read, W: Write>(mut stdin: R, mut stdout: W) {
     'a: loop {
         for &b in u32_byte_array(line * 16).iter() {
             let hex = u8_to_hex(b);
-            stdout.write(&[hex_to_ascii(hex.0), hex_to_ascii(hex.1)]).try();
+            print(&[hex_to_ascii(hex.0), hex_to_ascii(hex.1)], &mut stdout);
         }
-        stdout.write(b": ").try();
+        print(b": ", &mut stdout);
 
         for n in 0..8 {
             ascii[n * 2] = if let Some(x) = encode_byte(&mut stdin, &mut stdout) {
@@ -83,70 +82,90 @@ fn encode<R: Read, W: Write>(mut stdin: R, mut stdout: W) {
                 rem = n;
                 break 'a;
             };
-            stdout.write(b" ").try();
+            print(b" ", &mut stdout);
         }
 
-        stdout.write(b" ").try();
-        stdout.write(&ascii).try();
-        stdout.write(b"\n").try();
+        print(b" ", &mut stdout);
+        println(&ascii, &mut stdout);
 
         line += 1;
     }
 
     if rem != 0 {
         for _ in 0..41 - rem * 5 {
-            stdout.write(b" ").try();
+            print(b" ", &mut stdout);
         }
-        stdout.write(&ascii[..rem * 2]).try();
-        stdout.write(b"\n").try();
+        println(&ascii[..rem * 2], &mut stdout);
     }
 
 }
 
 fn decode<R: Read, W: Write>(stdin: R, mut stdout: W) {
-    let mut stdin = stdin.bytes().map(|x| x.try()).filter(|&x| x != b' ');
+    let mut stdin = stdin.bytes().filter(|x| x.as_ref().ok() != Some(&b' '));
 
     loop {
         stdin.nth(8); // Skip the first column
         for _ in 0..16 { // Process the inner 8 columns
-            stdout.write(&[hex_to_u8((
-                ascii_to_hex(
-                    try_some!(stdin.next() => ())
-                ),
-                ascii_to_hex(
-                    try_some!(stdin.next() => ())
-                )
-            ))]).try();
+            let h1 = ascii_to_hex(
+                if let Some(x) = stdin.next() {
+                    x.try(&mut stdout)
+                } else {
+                    return;
+                }
+            );
+            let h2 = ascii_to_hex(
+                if let Some(x) = stdin.next() {
+                    x.try(&mut stdout)
+                } else {
+                    return;
+                }
+            );
+
+            print(&[hex_to_u8((h1, h2))], &mut stdout);
         }
 
         loop {
-            if try_some!(stdin.next() => ()) == b'\n' {
-                break
+            if let Some(x) = stdin.next() {
+                if x.try(&mut stdout) == b'\n' {
+                    break;
+                }
+            } else {
+                return;
             }
         }
     }
 }
 
 fn main() {
-    let mut stdout = io::stdout();
+    let stdout = io::stdout();
+    let mut stdout = stdout.lock();
     let mut args = env::args();
     if args.len() > 2 {
-        fail("error: Too many arguments. Try 'hexdump -h'.");
+        fail("error: Too many arguments. Try 'hexdump -h'.", &mut stdout);
     }
 
     match args.nth(1) {
         None => encode(io::stdin(), stdout),
         Some(a) => match a.as_ref() { // MIR plz
             "-h" | "--help" => {
-                stdout.write(HELP).try();
+                println(HELP, &mut stdout);
             },
             "-r" | "--reverse" => {
                 match args.next() {
-                    None => decode(io::stdin(), stdout),
-                    Some(f) => decode(fs::File::open(f).try(), stdout),
+                    None => {
+                        let stdin = io::stdin();
+                        decode(stdin.lock(), stdout);
+                    }
+                    Some(f) => {
+                        let file = fs::File::open(f).try(&mut stdout);
+                        decode(file, stdout);
+                    }
                 }
             },
-            f => encode(fs::File::open(f).try(), stdout),
+            f => {
+                let file = fs::File::open(f).try(&mut stdout);
+                encode(file, stdout);
+            },
         },
     }
 }

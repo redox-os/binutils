@@ -1,6 +1,6 @@
 use std::io::{Write, Read};
 
-use extra::OptionalExt;
+use extra::{OptionalExt, print};
 
 /// A trait for characters/bytes that can be printable.
 pub trait IsPrintable {
@@ -62,16 +62,18 @@ impl Trailing {
 pub fn read<R: Read, W: Write>(stdin: R, mut stdout: W) {
     let mut trailing = Trailing::new();
 
-    for i in stdin.bytes().map(|x| x.try()) {
+    for i in stdin.bytes() {
+        let i = i.try(&mut stdout);
+
         if i.is_printable() {
             if trailing.is_complete() {
-                stdout.write(&[i]).try();
+                print(&[i], &mut stdout);
             } else if trailing.set(i) {
-                stdout.write(&trailing.chars()).try();
+                print(&trailing.chars(), &mut stdout);
             }
         } else {
             if trailing.is_complete() {
-                stdout.write(b"\n").try();
+                print(b"\n", &mut stdout);
             }
             trailing.reset();
         }

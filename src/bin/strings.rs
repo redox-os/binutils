@@ -5,10 +5,9 @@ extern crate binutils;
 use std::env;
 use std::fs;
 use std::io;
-use std::io::Write;
 
 use binutils::strings::read;
-use binutils::extra::{OptionalExt, fail};
+use binutils::extra::{OptionalExt, fail, println};
 
 const HELP: &'static [u8] = br#"
     NAME
@@ -38,19 +37,26 @@ const HELP: &'static [u8] = br#"
 "#;
 
 fn main() {
-    let mut stdout = io::stdout();
+    let stdout = io::stdout();
+    let mut stdout = stdout.lock();
     let mut args = env::args();
     if args.len() > 2 {
-        fail("error: Too many arguments. Try 'strings -h'.");
+        fail("error: Too many arguments. Try 'strings -h'.", &mut stdout);
     }
 
     match args.nth(1) {
-        None => read(io::stdin(), stdout),
+        None => {
+            let stdin = io::stdin();
+            read(stdin.lock(), stdout);
+        }
         Some(a) => match a.as_ref() {
             "-h" | "--help" => {
-                stdout.write(HELP).try();
+                println(HELP, &mut stdout);
             },
-            f => read(fs::File::open(f).try(), stdout),
+            f => {
+                let file = fs::File::open(f).try(&mut stdout);
+                read(file, stdout);
+            }
         },
     }
 }

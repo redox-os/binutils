@@ -7,7 +7,7 @@ use std::fs;
 use std::io;
 use std::io::{Write, Read};
 
-use binutils::extra::{OptionalExt, fail};
+use binutils::extra::{OptionalExt, fail, println, print};
 use binutils::convert::{u8_to_hex, hex_to_u8, ascii_to_hex, hex_to_ascii};
 
 const HELP: &'static [u8] = br#"
@@ -40,49 +40,59 @@ const HELP: &'static [u8] = br#"
 
 fn encode<R: Read, W: Write>(stdin: R, mut stdout: W) {
     for i in stdin.bytes() {
-        let (a, b) = u8_to_hex(i.try());
-        stdout.write(&[hex_to_ascii(a), hex_to_ascii(b)]).try();
+        let (a, b) = u8_to_hex(i.try(&mut stdout));
+        print(&[hex_to_ascii(a), hex_to_ascii(b)], &mut stdout);
     }
 }
 
 fn decode<R: Read, W: Write>(stdin: R, mut stdout: W) {
-    let mut iter = stdin.bytes().map(|x| x.try());
+    let mut iter = stdin.bytes();
     loop {
         let i = if let Some(x) = iter.next() {
-            x
+            x.try(&mut stdout)
         } else {
             break
         };
         let j = if let Some(x) = iter.next() {
-            x
+            x.try(&mut stdout)
         } else {
             break
         };
 
-        stdout.write(&[hex_to_u8((ascii_to_hex(i), ascii_to_hex(j)))]).try();
+        print(&[hex_to_u8((ascii_to_hex(i), ascii_to_hex(j)))], &mut stdout);
     }
 }
 
 fn main() {
-    let mut stdout = io::stdout();
+    let stdout = io::stdout();
+    let mut stdout = stdout.lock();
     let mut args = env::args();
     if args.len() > 2 {
-        fail("error: Too many arguments. Try 'hex -h'.");
+        fail("error: Too many arguments. Try 'hex -h'.", &mut stdout);
     }
 
     match args.nth(1) {
         None => encode(io::stdin(), stdout),
         Some(a) => match a.as_ref() { // MIR plz
             "-h" | "--help" => {
-                stdout.write(HELP).try();
+                println(HELP, &mut stdout);
             },
             "-d" | "--decode" => {
                 match args.next() {
-                    Some(f) => decode(fs::File::open(f).try(), stdout),
-                    None => decode(io::stdin(), stdout),
+                    Some(f) => {
+                        let file = fs::File::open(f).try(&mut stdout);
+                        decode(file, stdout);
+                    },
+                    None => {
+                        let stdin = io::stdin();
+                        decode(stdin.lock(), stdout);
+                    },
                 }
             },
-            f => encode(fs::File::open(f).try(), stdout),
+            f => {
+                let file = fs::File::open(f).try(&mut stdout);
+                encode(file, stdout);
+            },
         },
     }
 }

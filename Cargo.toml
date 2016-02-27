@@ -19,5 +19,6 @@ path = "src/bin/hexdump.rs"
 name = "disasm"
 path = "src/disasm/main.rs"
 
-[dependencies]
+[dependencies.coreutils]
+git = "https://github.com/redox-os/coreutils.git"
 
