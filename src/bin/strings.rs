@@ -44,7 +44,7 @@ fn main() {
     let mut args = env::args();
 
     if args.len() > 2 {
-        fail("error: Too many arguments. Try 'strings -h'.", &mut stderr);
+        fail("too many arguments.", &mut stderr);
     }
 
     match args.nth(1) {

@@ -38,6 +38,8 @@ const HELP: &'static [u8] = br#"
 "#;
 
 fn encode<R: Read, W: Write>(stdin: R, mut stdout: W, mut stderr: Stderr) {
+    // Encode the input stream to hexadecimal output stream.
+
     for i in stdin.bytes() {
         let (a, b) = u8_to_hex(i.try(&mut stderr));
         stdout.write(&[hex_to_ascii(a), hex_to_ascii(b)]).try(&mut stderr);
@@ -45,6 +47,8 @@ fn encode<R: Read, W: Write>(stdin: R, mut stdout: W, mut stderr: Stderr) {
 }
 
 fn decode<R: Read, W: Write>(stdin: R, mut stdout: W, mut stderr: Stderr) {
+    // Decode hexadecimal to base-256, raw byte stream.
+
     let mut iter = stdin.bytes();
     loop {
         let i = if let Some(x) = iter.next() {
@@ -69,7 +73,7 @@ fn main() {
 
     let mut args = env::args();
     if args.len() > 2 {
-        fail("error: Too many arguments. Try 'hex -h'.", &mut stderr);
+        fail("too many arguments.", &mut stderr);
     }
 
     match args.nth(1) {
@@ -90,6 +94,7 @@ fn main() {
                     },
                 }
             },
+            // Read from file instead of standard input.
             f => {
                 let file = fs::File::open(f).try(&mut stderr);
                 encode(file, stdout, stderr);

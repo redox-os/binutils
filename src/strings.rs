@@ -16,6 +16,7 @@ impl IsPrintable for u8 {
     }
 }
 
+/// A buffer tracking the previous printable characters.
 #[derive(Copy, Clone)]
 struct Trailing {
     chars: [u8; 4],
