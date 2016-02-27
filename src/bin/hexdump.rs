@@ -95,9 +95,10 @@ fn encode<R: Read, W: Write>(mut stdin: R, mut stdout: W) {
         for _ in 0..41 - rem * 5 {
             print(b" ", &mut stdout);
         }
-        println(&ascii[..rem * 2], &mut stdout);
+        print(&ascii[..rem * 2], &mut stdout);
     }
 
+    print(b"\n", &mut stdout);
 }
 
 fn decode<R: Read, W: Write>(stdin: R, mut stdout: W) {
