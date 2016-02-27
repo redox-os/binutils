@@ -7,7 +7,7 @@ use std::fs;
 use std::io;
 
 use binutils::strings::read;
-use binutils::extra::{OptionalExt, fail, println};
+use binutils::extra::{OptionalExt, WriteExt, fail};
 
 const HELP: &'static [u8] = br#"
     NAME
@@ -17,9 +17,10 @@ const HELP: &'static [u8] = br#"
     DESCRIPTION
         This utility will read the file from the path given in the argument. If no argument is given, 'strings' will read from the standard input. The byte stream is then inspected for contiguous, printable ASCII characters of length 4 or more. These strings of printable characters are written to the standard output. Each contiguous strings are seperated by a newline (0x0A).
 
-        This utility is useful for inspecting binary files for human readable information, to determine the contents.
+        This utility is useful for inspecting binary files for human readable information, to determine the contents. Note that all non-ASCII characters are treated as non-printable, due to the numerous false positives otherwise.
 
         This is a clone of GNU strings, though they differ in a number of ways.
+
     OPTIONS
         -h
         --help
@@ -39,23 +40,25 @@ const HELP: &'static [u8] = br#"
 fn main() {
     let stdout = io::stdout();
     let mut stdout = stdout.lock();
+    let mut stderr = io::stderr();
     let mut args = env::args();
+
     if args.len() > 2 {
-        fail("error: Too many arguments. Try 'strings -h'.", &mut stdout);
+        fail("error: Too many arguments. Try 'strings -h'.", &mut stderr);
     }
 
     match args.nth(1) {
         None => {
             let stdin = io::stdin();
-            read(stdin.lock(), stdout);
+            read(stdin.lock(), stdout, stderr);
         }
         Some(a) => match a.as_ref() {
             "-h" | "--help" => {
-                println(HELP, &mut stdout);
+                stdout.writeln(HELP).try(&mut stderr);
             },
             f => {
-                let file = fs::File::open(f).try(&mut stdout);
-                read(file, stdout);
+                let file = fs::File::open(f).try(&mut stderr);
+                read(file, stdout, stderr);
             }
         },
     }

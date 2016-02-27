@@ -4,11 +4,10 @@ extern crate binutils;
 
 use std::env;
 use std::fs;
-use std::io;
-use std::io::{Write, Read};
+use std::io::{self, Write, Read, Stderr};
 use std::mem;
 
-use binutils::extra::{OptionalExt, fail, println, print};
+use binutils::extra::{OptionalExt, WriteExt, fail};
 use binutils::convert::{u8_to_hex, hex_to_u8, u32_byte_array, hex_to_ascii, ascii_to_hex};
 use binutils::strings::IsPrintable;
 
@@ -37,18 +36,21 @@ const HELP: &'static [u8] = br#"
 
         The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 
+        Someone once read this. True story, bruh.
+
         THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 "#;
 
-fn encode_byte<R: Read, W: Write>(stdin: &mut R, mut stdout: &mut W) -> Option<u8> {
+fn encode_byte<R: Read, W: Write>(stdin: &mut R, mut stdout: &mut W, stderr: &mut Stderr) -> Option<u8> {
     let byte = if let Some(x) = stdin.bytes().next() {
-        x.try(&mut stdout)
+        x.try(&mut *stderr)
     } else {
         return None;
     };
 
     let hex = u8_to_hex(byte);
-    print(&[hex_to_ascii(hex.0), hex_to_ascii(hex.1)], &mut stdout);
+
+    stdout.write(&[hex_to_ascii(hex.0), hex_to_ascii(hex.1)]).try(stderr);
 
     Some(if byte.is_printable() {
         byte
@@ -57,7 +59,7 @@ fn encode_byte<R: Read, W: Write>(stdin: &mut R, mut stdout: &mut W) -> Option<u
     })
 }
 
-fn encode<R: Read, W: Write>(mut stdin: R, mut stdout: W) {
+fn encode<R: Read, W: Write>(mut stdin: R, mut stdout: W, mut stderr: Stderr) {
     let rem;
     let mut ascii: [u8; 16] = unsafe { mem::uninitialized() };
     let mut line = 0;
@@ -65,43 +67,43 @@ fn encode<R: Read, W: Write>(mut stdin: R, mut stdout: W) {
     'a: loop {
         for &b in u32_byte_array(line * 16).iter() {
             let hex = u8_to_hex(b);
-            print(&[hex_to_ascii(hex.0), hex_to_ascii(hex.1)], &mut stdout);
+            stdout.write(&[hex_to_ascii(hex.0), hex_to_ascii(hex.1)]).try(&mut stderr);
         }
-        print(b": ", &mut stdout);
+        stdout.write(b": ").try(&mut stderr);
 
         for n in 0..8 {
-            ascii[n * 2] = if let Some(x) = encode_byte(&mut stdin, &mut stdout) {
+            ascii[n * 2] = if let Some(x) = encode_byte(&mut stdin, &mut stdout, &mut stderr) {
                 x
             } else {
                 rem = n;
                 break 'a;
             };
-            ascii[n * 2 + 1] = if let Some(x) = encode_byte(&mut stdin, &mut stdout) {
+            ascii[n * 2 + 1] = if let Some(x) = encode_byte(&mut stdin, &mut stdout, &mut stderr) {
                 x
             } else {
                 rem = n;
                 break 'a;
             };
-            print(b" ", &mut stdout);
+            stdout.write(b" ").try(&mut stderr);
         }
 
-        print(b" ", &mut stdout);
-        println(&ascii, &mut stdout);
+        stdout.write(b" ").try(&mut stderr);
+        stdout.writeln(&ascii).try(&mut stderr);
 
         line += 1;
     }
 
     if rem != 0 {
         for _ in 0..41 - rem * 5 {
-            print(b" ", &mut stdout);
+            stdout.write(b" ").try(&mut stderr);
         }
-        print(&ascii[..rem * 2], &mut stdout);
+        stdout.write(&ascii[..rem * 2]).try(&mut stderr);
     }
 
-    print(b"\n", &mut stdout);
+    stdout.write(b"\n").try(&mut stderr);
 }
 
-fn decode<R: Read, W: Write>(stdin: R, mut stdout: W) {
+fn decode<R: Read, W: Write>(stdin: R, mut stdout: W, mut stderr: Stderr) {
     let mut stdin = stdin.bytes().filter(|x| x.as_ref().ok() != Some(&b' '));
 
     loop {
@@ -109,25 +111,25 @@ fn decode<R: Read, W: Write>(stdin: R, mut stdout: W) {
         for _ in 0..16 { // Process the inner 8 columns
             let h1 = ascii_to_hex(
                 if let Some(x) = stdin.next() {
-                    x.try(&mut stdout)
+                    x.try(&mut stderr)
                 } else {
                     return;
                 }
             );
             let h2 = ascii_to_hex(
                 if let Some(x) = stdin.next() {
-                    x.try(&mut stdout)
+                    x.try(&mut stderr)
                 } else {
                     return;
                 }
             );
 
-            print(&[hex_to_u8((h1, h2))], &mut stdout);
+            stdout.write(&[hex_to_u8((h1, h2))]).try(&mut stderr);
         }
 
         loop {
             if let Some(x) = stdin.next() {
-                if x.try(&mut stdout) == b'\n' {
+                if x.try(&mut stderr) == b'\n' {
                     break;
                 }
             } else {
@@ -140,32 +142,34 @@ fn decode<R: Read, W: Write>(stdin: R, mut stdout: W) {
 fn main() {
     let stdout = io::stdout();
     let mut stdout = stdout.lock();
+    let mut stderr = io::stderr();
+
     let mut args = env::args();
     if args.len() > 2 {
-        fail("error: Too many arguments. Try 'hexdump -h'.", &mut stdout);
+        fail("error: Too many arguments. Try 'hexdump -h'.", &mut stderr);
     }
 
     match args.nth(1) {
-        None => encode(io::stdin(), stdout),
+        None => encode(io::stdin(), stdout, stderr),
         Some(a) => match a.as_ref() { // MIR plz
             "-h" | "--help" => {
-                println(HELP, &mut stdout);
+                stdout.writeln(HELP).try(&mut stderr);
             },
             "-r" | "--reverse" => {
                 match args.next() {
                     None => {
                         let stdin = io::stdin();
-                        decode(stdin.lock(), stdout);
+                        decode(stdin.lock(), stdout, stderr);
                     }
                     Some(f) => {
-                        let file = fs::File::open(f).try(&mut stdout);
-                        decode(file, stdout);
+                        let file = fs::File::open(f).try(&mut stderr);
+                        decode(file, stdout, stderr);
                     }
                 }
             },
             f => {
-                let file = fs::File::open(f).try(&mut stdout);
-                encode(file, stdout);
+                let file = fs::File::open(f).try(&mut stderr);
+                encode(file, stdout, stderr);
             },
         },
     }

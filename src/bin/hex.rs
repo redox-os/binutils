@@ -4,10 +4,9 @@ extern crate binutils;
 
 use std::env;
 use std::fs;
-use std::io;
-use std::io::{Write, Read};
+use std::io::{self, Stderr, Write, Read};
 
-use binutils::extra::{OptionalExt, fail, println, print};
+use binutils::extra::{OptionalExt, WriteExt, fail};
 use binutils::convert::{u8_to_hex, hex_to_u8, ascii_to_hex, hex_to_ascii};
 
 const HELP: &'static [u8] = br#"
@@ -38,60 +37,62 @@ const HELP: &'static [u8] = br#"
         THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 "#;
 
-fn encode<R: Read, W: Write>(stdin: R, mut stdout: W) {
+fn encode<R: Read, W: Write>(stdin: R, mut stdout: W, mut stderr: Stderr) {
     for i in stdin.bytes() {
-        let (a, b) = u8_to_hex(i.try(&mut stdout));
-        print(&[hex_to_ascii(a), hex_to_ascii(b)], &mut stdout);
+        let (a, b) = u8_to_hex(i.try(&mut stderr));
+        stdout.write(&[hex_to_ascii(a), hex_to_ascii(b)]).try(&mut stderr);
     }
 }
 
-fn decode<R: Read, W: Write>(stdin: R, mut stdout: W) {
+fn decode<R: Read, W: Write>(stdin: R, mut stdout: W, mut stderr: Stderr) {
     let mut iter = stdin.bytes();
     loop {
         let i = if let Some(x) = iter.next() {
-            x.try(&mut stdout)
+            x.try(&mut stderr)
         } else {
             break
         };
         let j = if let Some(x) = iter.next() {
-            x.try(&mut stdout)
+            x.try(&mut stderr)
         } else {
             break
         };
 
-        print(&[hex_to_u8((ascii_to_hex(i), ascii_to_hex(j)))], &mut stdout);
+        stdout.write(&[hex_to_u8((ascii_to_hex(i), ascii_to_hex(j)))]).try(&mut stderr);
     }
 }
 
 fn main() {
     let stdout = io::stdout();
     let mut stdout = stdout.lock();
+    let mut stderr = io::stderr();
+
     let mut args = env::args();
     if args.len() > 2 {
-        fail("error: Too many arguments. Try 'hex -h'.", &mut stdout);
+        fail("error: Too many arguments. Try 'hex -h'.", &mut stderr);
     }
 
     match args.nth(1) {
-        None => encode(io::stdin(), stdout),
+        None => encode(io::stdin(), stdout, stderr),
         Some(a) => match a.as_ref() { // MIR plz
             "-h" | "--help" => {
-                println(HELP, &mut stdout);
+                stdout.writeln(HELP).try(&mut stderr);
             },
             "-d" | "--decode" => {
                 match args.next() {
                     Some(f) => {
-                        let file = fs::File::open(f).try(&mut stdout);
-                        decode(file, stdout);
+                        let file = fs::File::open(f).try(&mut stderr);
+                        decode(file, stdout, stderr);
                     },
                     None => {
                         let stdin = io::stdin();
-                        decode(stdin.lock(), stdout);
+                        decode(stdin.lock(), stdout, stderr);
                     },
                 }
             },
             f => {
-                let file = fs::File::open(f).try(&mut stdout);
-                encode(file, stdout);
+                let file = fs::File::open(f).try(&mut stderr);
+                encode(file, stdout, stderr);
             },
         },
     }
