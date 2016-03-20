@@ -6,7 +6,8 @@ use std::env;
 use std::fs;
 use std::io::{self, Stderr, Write, Read};
 
-use binutils::extra::{OptionalExt, WriteExt, fail};
+use binutils::extra::option::OptionalExt;
+use binutils::extra::io::{WriteExt, fail};
 use binutils::convert::{u8_to_hex, hex_to_u8, ascii_to_hex, hex_to_ascii};
 
 const HELP: &'static [u8] = br#"

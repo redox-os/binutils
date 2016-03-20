@@ -7,7 +7,8 @@ use std::fs;
 use std::io;
 
 use binutils::strings::read;
-use binutils::extra::{OptionalExt, WriteExt, fail};
+use binutils::extra::option::OptionalExt;
+use binutils::extra::io::{WriteExt, fail};
 
 const HELP: &'static [u8] = br#"
     NAME

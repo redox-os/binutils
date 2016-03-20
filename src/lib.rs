@@ -8,7 +8,7 @@
 #![deny(missing_docs)]
 
 #[macro_use]
-extern crate coreutils;
+pub extern crate extra;
 
 /// Scan a byte stream for printable strings of 4 or more bytes.
 pub mod strings;
@@ -18,5 +18,3 @@ pub mod bits;
 
 /// Converting between bases and endianesses
 pub mod convert;
-
-pub use coreutils::extra;

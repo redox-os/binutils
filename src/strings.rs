@@ -1,6 +1,6 @@
 use std::io::{Write, Read, Stderr};
 
-use extra::OptionalExt;
+use extra::option::OptionalExt;
 
 /// A trait for characters/bytes that can be printable.
 pub trait IsPrintable {
