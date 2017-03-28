@@ -7,7 +7,6 @@
 #![deny(warnings)]
 #![deny(missing_docs)]
 
-#[macro_use]
 pub extern crate extra;
 
 /// Scan a byte stream for printable strings of 4 or more bytes.
