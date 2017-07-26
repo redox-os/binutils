@@ -1,0 +1,14 @@
+[root]
+name = "binutils"
+version = "0.1.0"
+dependencies = [
+ "extra 0.1.0 (git+https://github.com/redox-os/libextra.git)",
+]
+
+[[package]]
+name = "extra"
+version = "0.1.0"
+source = "git+https://github.com/redox-os/libextra.git#402932084acd5fef4812945887ceaaa2ddd5f264"
+
+[metadata]
+"checksum extra 0.1.0 (git+https://github.com/redox-os/libextra.git)" = "<none>"
