@@ -43,7 +43,7 @@ const HELP: &'static [u8] = br#"
 "#;
 
 /// Encode a single byte to the output stream
-fn encode_byte<R: Read, W: Write>(stdin: &mut R, mut stdout: &mut W, stderr: &mut Stderr) -> Option<u8> {
+fn encode_byte<R: Read, W: Write>(stdin: &mut R, stdout: &mut W, stderr: &mut Stderr) -> Option<u8> {
     let byte = if let Some(x) = stdin.bytes().next() {
         x.try(&mut *stderr)
     } else {
