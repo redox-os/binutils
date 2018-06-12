@@ -20,5 +20,4 @@ name = "disasm"
 path = "src/disasm/main.rs"
 
 [dependencies.extra]
-git = "https://github.com/redox-os/libextra.git"
-
+git = "https://gitlab.redox-os.org/redox-os/libextra.git"
