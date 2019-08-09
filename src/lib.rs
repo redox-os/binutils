@@ -4,7 +4,6 @@
 // If this code works, it was written by Ticki. If it does not, I don't know who the hell wrote it
 // but it was definitively not me. Blame someone else.
 
-#![deny(warnings)]
 #![deny(missing_docs)]
 
 pub extern crate extra;

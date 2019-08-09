@@ -1,5 +1,3 @@
-#![deny(warnings)]
-
 extern crate binutils;
 
 use std::env;
