@@ -27,7 +27,7 @@ pub fn u32_byte_array(int: u32) -> [u8; 4] {
 #[inline]
 pub fn hex_to_ascii(b: u8) -> u8 {
     match b {
-        0...9 => b'0' + b,
+        0..=9 => b'0' + b,
         _ => b'a' - 10 + b,
     }
 }
@@ -36,7 +36,7 @@ pub fn hex_to_ascii(b: u8) -> u8 {
 #[inline]
 pub fn ascii_to_hex(b: u8) -> u8 {
     match b {
-        b'0'...b'9' => b - b'0',
+        b'0'..=b'9' => b - b'0',
         _ => b - b'a' + 10,
     }
 }
