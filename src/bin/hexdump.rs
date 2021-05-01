@@ -3,7 +3,7 @@ extern crate binutils;
 use std::env;
 use std::fs;
 use std::io::{self, Write, Read, Stderr};
-use std::mem;
+use std::mem::MaybeUninit;
 
 use binutils::extra::option::OptionalExt;
 use binutils::extra::io::{WriteExt, fail};
@@ -66,7 +66,7 @@ fn encode<R: Read, W: Write>(mut stdin: R, mut stdout: W, mut stderr: Stderr) {
     let rem;
     // This is the char buffer. The last 16 byte column, which prints the printable characters.
     // The non-printable ones are replaced with `.`.
-    let mut ascii: [u8; 16] = unsafe { mem::uninitialized() };
+    let mut ascii: [u8; 16] = unsafe { MaybeUninit::uninit().assume_init() };
 
     let mut line = 0;
 
