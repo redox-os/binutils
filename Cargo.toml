@@ -15,9 +15,5 @@ path = "src/bin/hex.rs"
 name = "hexdump"
 path = "src/bin/hexdump.rs"
 
-[[bin]]
-name = "disasm"
-path = "src/disasm/main.rs"
-
 [dependencies.extra]
 git = "https://gitlab.redox-os.org/redox-os/libextra.git"
